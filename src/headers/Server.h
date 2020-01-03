@@ -17,7 +17,7 @@ namespace finapi
 
         std::thread* thread;
 
-        int  push(const char* message, const unsigned int length) const;
+        int push(const char* message, const unsigned int length) const;
         ~Connection() { std::free(ip_addr); }
     };
 

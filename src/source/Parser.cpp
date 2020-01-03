@@ -196,6 +196,34 @@ COMMAND_METHOD(login)
     LOG_S(ERROR) << "Connection submitted invalid credentials.";
 }
 
+COMMAND_METHOD(stream)
+{
+    MAKE_CONNECTION;
+
+    if (argc <= 3)
+    {
+        MUST_HAVE_ARGS(4, "STRM");
+        return;
+    }
+
+    unsigned int bytes = std::stoi(args[2]);
+    unsigned int first = std::stoi(args[3]);
+
+    char* buffer = (char*)std::malloc(bytes);
+    std::memset(buffer, 0, bytes);
+
+    std::ifstream file(args[1]);
+
+    file.seekg(first);
+    file.read(buffer, bytes);
+
+    file.close();
+
+    connection->push(buffer, bytes);
+
+    std::free(buffer);
+}
+
 COMMAND_METHOD(connections)
 {
     MAKE_SERVER;
@@ -231,7 +259,8 @@ _command Parser::commands[] = {
     { request,     "REQ",         Admin },
     { chunk,       "CHK",         Guest },
     { size,        "SZE",         Guest },
-    { login,       "LOGIN",       Guest }
+    { login,       "LOGIN",       Guest },
+    { stream,      "STRM",        Admin }
 };
 
 void Parser::process_command(const char* command, void* server, void* connection)

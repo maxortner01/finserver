@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <cstring>
+#include <unistd.h>
 
 using namespace finapi;
 
@@ -23,17 +24,15 @@ void Server::_process_connection(Connection* connection)
     unsigned int buffer_length = 0;
     do
     {
+
         std::memset(data_buffer, 0, _FIN_BUFFER_SIZE);
         buffer_length = recv(connection->_socket, data_buffer, _FIN_BUFFER_SIZE, 0);
 
-        if (buffer_length > 0)
-        {
-            LOG_S(INFO) << "Received " << buffer_length << " bytes from " << connection->ip_addr << ": " << data_buffer;
+        usleep(500);
+        LOG_S(INFO) << "Received " << buffer_length << " bytes from " << connection->ip_addr << ": " << data_buffer;
+        network::Parser::process_command(data_buffer, nullptr, connection);
 
-            network::Parser::process_command(data_buffer, nullptr, connection);
-        }
-
-    } while (buffer_length > 0);
+    } while(buffer_length > 0);
     std::free(data_buffer);
 
     LOG_S(WARNING) << "Closing connection from " << connection->ip_addr;
@@ -100,8 +99,8 @@ Server::~Server()
 void Server::run() noexcept
 {
     // Start the command line thread
-    LOG_S(INFO) << "Starting Server.";
-    LOG_S(INFO) << "Listening for connections...";
+    LOG_S(INFO) << "Running finserver version " << FIN_SERVER_VERSION_STR;
+    LOG_S(INFO) << "Listening for connections....";
     command_line_thread = new std::thread(_process_commandline, this);
 
     while (_running)
@@ -116,7 +115,7 @@ void Server::run() noexcept
         // Print a message if so and free up the previously allocated connection.
         if (connection->_socket < 0)
         {
-            LOG_S(ERROR) << "Connection refused. Error: " << errno << ": " << strerror(errno);
+            LOG_S(ERROR) << "Connection refused. Error code " << errno << ": " << strerror(errno);
             std::free(connection);
             continue;
         }
